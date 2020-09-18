@@ -1,0 +1,22 @@
+[configurationNetwork]
+seed = 1
+# probability of LoRa device on edge
+gamma = 1.0
+# probability of device on smartphone
+beta = 1.0
+dee = 1
+dcc = 25
+dec = 50
+dscnd = 150
+dlocalhost = 0.015
+
+[brokerHostConfig]
+type = "CLOUD"
+dataRate = 1e9
+
+[[hostsConfig]]
+    type = "CLOUD"
+    id = "c000"
+[[hostsConfig]]
+    type = "EDGE"
+    dataRate = 10
