@@ -517,7 +517,7 @@ if __name__ == '__main__':
         ax.set_title("Num of rounds (proxy of cost)")
         ax.set_xlabel("$P_{e}$")
         ax.set_ylabel("$P_{l}$")
-        plt.zscale('symlog')
+ #       plt.zscale('symlog')
         ax.set_zlabel("num of round")
         ax.set_xlim([1.0, 0.0])
         ax.set_ylim([0.0, 1.0])
