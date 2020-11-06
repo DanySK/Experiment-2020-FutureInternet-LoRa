@@ -464,81 +464,6 @@ if __name__ == '__main__':
         fig.savefig(filename)
         plt.close(fig)
         
-    def make_log_double_line_chart(xdata, ydata1, ydata1Label, ydata1Color, ydata2, ydata2Label, ydata2Color, xlabel = '', ylabel = '', title = '', filename = ''):
-        fig = plt.figure(figsize=(6,4))
-        ax = fig.add_subplot(1, 1, 1)
-        ax.set_title(title)
-        ax.set_xlabel(xlabel)
-        plt.yscale('symlog')
-        ax.set_ylabel(ylabel)
-        ax.set_xlim([min(xdata), max(xdata)])
-        ax.set_ylim([0,max(max(ydata1), max(ydata2))])
-        ax.plot(xdata, ydata1, label=ydata1Label, color=ydata1Color, linewidth=1.0)
-        ax.plot(xdata, ydata2, label=ydata2Label, color=ydata2Color, linewidth=1.0)
-        ax.legend()
-        plt.tight_layout()
-        fig.savefig(filename)
-        plt.close(fig)
-
-    def generate_round_charts(datas, basedir=''):
-        numSmartphoneNode = 300
-        g_axis = []
-        b_axis = []
-        ez = []
-        cz = []
-        sz = []
-        b_axis_with_g1 = []
-        cz_with_g1 = []
-        sz_with_g1_all = []
-        sz_with_g1_each = []
-        g_axis_with_b1 = []
-        cz_with_b1 = []
-        ez_with_b1 = []
-        for g in datas['gamma'].values:
-            for b in datas['beta'].values:
-                filterd = datas.sel(gamma=g).sel(beta=b)
-                cz.append(filterd['runOnCloudTot'].values[0, -1])
-                ez.append(filterd['runOnEdgeTot'].values[0, -1])
-                sz.append(filterd['runOnSmartphoneTot'].values[0, -1])
-                g_axis.append(g)
-                b_axis.append(b)
-                if b == 1.0:
-                    g_axis_with_b1.append(g)
-                    cz_with_b1.append(filterd['runOnCloudTot'].values[0, -1])
-                    ez_with_b1.append(filterd['runOnEdgeTot'].values[0, -1])
-                if g == 1.0:
-                    b_axis_with_g1.append(b)
-                    cz_with_g1.append(filterd['runOnCloudTot'].values[0, -1])
-                    sz_with_g1_all.append(filterd['runOnSmartphoneTot'].values[0, -1])
-                    sz_with_g1_each.append(filterd['runOnSmartphoneTot'].values[0, -1] / (numSmartphoneNode * b))
-        # 3D chart
-        fig = plt.figure(figsize=(6,4))
-        ax = fig.add_subplot(1, 1, 1, projection='3d')
-        ax.set_title("Num of rounds (proxy of cost)")
-        ax.set_xlabel("$P_{e}$")
-        ax.set_ylabel("$P_{l}$")
- #       plt.zscale('symlog')
-        ax.set_zlabel("num of round")
-        ax.set_xlim([1.0, 0.0])
-        ax.set_ylim([0.0, 1.0])
-        ax.set_zlim([0,max(max(cz), max(ez))])
-        add_data_to_chart_delays(ax, g_axis, b_axis, cz, 'OnCloud', 2)
-        add_data_to_chart_delays(ax, g_axis, b_axis, ez, 'OnEdge', 0)
-        add_data_to_chart_delays(ax, g_axis, b_axis, sz, 'OnThermostats', 1)
-        ax.legend()
-        plt.tight_layout()
-        fig.savefig(f'{basedir}{separator}rounds3D.pdf')
-        plt.close(fig)
-        # 2D by beta all smartphone
-        filename = f'{basedir}{separator}roundsByPl-allThermostats.pdf'
-        make_log_double_line_chart(b_axis_with_g1, cz_with_g1, 'OnCloud', colors[2], sz_with_g1_all, 'OnAllThermostats', colors[1], xlabel='$P_{l}$', ylabel='num of round', title='Num of rounds (cost proxy)', filename=filename)
-        # 2D by beta each smartphoneplt.tight_layout()
-        filename = f'{basedir}{separator}roundsByPl-eachThermostat.pdf'
-        make_log_double_line_chart(b_axis_with_g1, cz_with_g1, 'OnCloud', colors[2], sz_with_g1_each, 'OnEachThermostat', colors[1], xlabel='$P_{l}$', ylabel='num of round', title='Num of rounds (cost proxy)', filename=filename)
-        # 2D by gamma
-        filename = f'{basedir}{separator}roundsByPe.pdf'
-        make_log_double_line_chart(g_axis_with_b1, cz_with_b1, 'OnCloud', colors[2], ez_with_b1, 'OnEdge', colors[0], xlabel='$P_{e}$', ylabel='num of round', title='Num of rounds (cost proxy)', filename=filename)
-
     def generate_delay_charts(datas, errors = None, basedir=''):
         dir3D = f'{basedir}{separator}3D{separator}Pl-Pe'
         Path(dir3D).mkdir(parents=True, exist_ok=True)
@@ -658,15 +583,12 @@ if __name__ == '__main__':
 
     def generate_charts(means, errors = None, basedir=''):
         applicationDir = f'{basedir}{separator}application'
-        roundDir = f'{basedir}{separator}protelis-rounds'
         delayDir = f'{basedir}{separator}delays'
         Path(applicationDir).mkdir(parents=True, exist_ok=True)
-        Path(roundDir).mkdir(parents=True, exist_ok=True)
         Path(delayDir).mkdir(parents=True, exist_ok=True)
         data = means.sel(dLocalhost=0.02)
         generate_application_chart(data, basedir=applicationDir)
         generate_delay_charts(data, basedir=delayDir)
-        generate_round_charts(data.sel(dee=1.0).sel(dcc=25).sel(dec=50).sel(dsCnd=150), basedir=roundDir)
 
     for experiment in experiments:
         current_experiment_means = means[experiment]
