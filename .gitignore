@@ -27,4 +27,6 @@ hs_err_pid*
 charts/*
 data_summary*
 timeprocessed
+round_data_summary*
+round_timeprocessed
 simulator/*
