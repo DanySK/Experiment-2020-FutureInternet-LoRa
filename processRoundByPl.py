@@ -365,9 +365,129 @@ if __name__ == '__main__':
     matplotlib.rcParams.update({'axes.labelsize': 10})
 #    Custom charting
 #    colors = ['#33a02c','#e31a1c','#1f78b4', '#000000FF']
-    colors_length = 3
+    colors_length = 4
     colors = [cmx.viridis(float(i)/(colors_length - 1)) for i in range(colors_length)]
+    
+    def compute_protelis_broker_cost():
+        node_count = 310
+        neighboor = 49
+        daily_connection_minutes = 24 * 60
+        daily_round = 24 * 4
+        daily_connection_cost = daily_connection_minutes * 0.096 / 1_000_000
+        daily_message_cost = (daily_round + daily_round * neighboor) * 1.20 / 1_000_000
+        daily_broker_cost = (daily_connection_cost + daily_message_cost) * node_count
+        return daily_broker_cost
 
+    def compute_lora_gateway_broker_cost():
+        gateway_count = 9
+        mote_per_gateway = 10
+        daily_connection_minutes = 24 * 60
+        daily_lora_per_gateway = 24 * mote_per_gateway
+        daily_connection_cost = daily_connection_minutes * 0.096 / 1_000_000
+        daily_message_cost = daily_lora_per_gateway * 2 * 1.20 / 1_000_000
+        daily_broker_cost = (daily_connection_cost + daily_message_cost) * gateway_count
+        return daily_broker_cost
+    
+    def compute_lora_server_broker_cost():
+        gateway_count = 9
+        mote_per_gateway = 10
+        daily_connection_minutes = 24 * 60
+        daily_lora_per_gateway = 24 * mote_per_gateway
+        daily_connection_cost = daily_connection_minutes * 0.096 / 1_000_000
+        daily_message_cost = (daily_lora_per_gateway * gateway_count + daily_lora_per_gateway) * 1.20 / 1_000_000
+        daily_broker_cost = daily_connection_cost + daily_message_cost
+        return daily_broker_cost
+    
+    def compute_broker_cost():
+        return compute_protelis_broker_cost() + compute_lora_gateway_broker_cost() + compute_lora_server_broker_cost()
+    
+    def num_of_instance(node_count):
+        if node_count == 0:
+            return 0
+        if node_count <= 100:
+            return 1
+        if node_count <= 200:
+            return 2
+        return 3
+    
+    def compute_instance_cost(node_count):
+        return num_of_instance(node_count) * 0.0291 * 24
+    
+    def compute_cloud_cost(node_count, withBroker):
+        num_of_day = 1
+        if withBroker:
+            return (compute_broker_cost() + compute_instance_cost(node_count)) * num_of_day
+        return compute_instance_cost(node_count) * num_of_day
+    
+    def compute_energy_cost(proportion_device_on_thermostat, withBroker):
+        device_count = 300
+        daily_round_per_device = 4 * 24
+        daily_round = device_count * proportion_device_on_thermostat * daily_round_per_device
+        time = 24 * 60 * 60
+        time_per_round = 0.1
+        idle_consumption = 0.25
+        round_consumption = 1.25 - idle_consumption
+        daily_joule = device_count * idle_consumption * time + daily_round * round_consumption * time_per_round
+        price_per_joule = 9.3e-8
+        energy_cost = daily_joule * price_per_joule
+        if withBroker:
+            return compute_broker_cost() + energy_cost
+        return energy_cost 
+    
+    def make_four_line_chart(xdata, ydata1, ydata1Label, ydata1Color, ydata2, ydata2Label, ydata2Color, ydata3, ydata3Label, ydata3Color, ydata4, ydata4Label, ydata4Color, xlabel = '', ylabel = '', ylabel3 = '', title = '', filename = ''):
+        fig = plt.figure(figsize=(6,3))
+        ax = fig.add_subplot(1, 1, 1)
+        ax.set_title(title)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_xlim([0, 1])
+        # ax.set_yscale('symlog', linthreshy=6)
+        # ax.set_ylim([0,max(max(ydata1), max(ydata2), max(ydata3)) + 2])
+        ax.plot(xdata, ydata1, label=ydata1Label, color=ydata1Color, linewidth=2.0)
+        ax.plot(xdata, ydata2, label=ydata2Label, color=ydata2Color, linewidth=2.0)
+        ax.plot(xdata, ydata3, label=ydata3Label, color=ydata3Color, linewidth=2.0)
+        ax.plot(xdata, ydata4, label=ydata4Label, color=ydata4Color, linewidth=2.0)
+        
+        ax.legend()
+        plt.tight_layout()
+        fig.savefig(filename)
+        plt.close(fig)
+    
+    def make_three_line_chart(xdata, ydata1, ydata1Label, ydata1Color, ydata2, ydata2Label, ydata2Color, ydata3, ydata3Label, ydata3Color, xlabel = '', ylabel = '', ylabel3 = '', title = '', filename = ''):
+        fig = plt.figure(figsize=(7,4))
+        ax = fig.add_subplot(1, 1, 1)
+        ax.set_title(title)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_xlim([0, 1])
+        # ax.set_yscale('symlog', linthreshy=6)
+        ax.set_ylim([0,max(max(ydata1), max(ydata2), max(ydata3)) + 0.5])
+        ax.plot(xdata, ydata1, label=ydata1Label, color=ydata1Color, linewidth=2.0)
+        ax.plot(xdata, ydata2, label=ydata2Label, color=ydata2Color, linewidth=2.0)
+        ax.plot(xdata, ydata3, label=ydata3Label, color=ydata3Color, linewidth=2.0)
+        
+        ax.legend()
+        plt.tight_layout()
+        fig.savefig(filename)
+        plt.close(fig)
+    
+    def make_two_line_chart(xdata, ydata1, ydata1Label, ydata1Color, ydata2, ydata2Label, ydata2Color, xlabel = '', ylabel = '', ylabel3 = '', title = '', filename = ''):
+        fig = plt.figure(figsize=(7,4))
+        ax = fig.add_subplot(1, 1, 1)
+        ax.set_title(title)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_xlim([0, 1])
+        # ax.set_yscale('symlog', linthreshy=6)
+        # ax.set_ylim([0,max(max(ydata1), max(ydata2), max(ydata3)) + 2])
+        ax.plot(xdata, ydata1, label=ydata1Label, color=ydata1Color, linewidth=2.0)
+        ax.plot(xdata, ydata2, label=ydata2Label, color=ydata2Color, linewidth=2.0)
+        
+        ax.legend()
+        plt.tight_layout()
+        fig.savefig(filename)
+        plt.close(fig)
+        
     def make_log_double_line_chart(xdata1, ydata1, ydata1Label, ydata1Color, xdata2, ydata2, ydata2Label, ydata2Color, xlabel = '', ylabel = '', title = '', filename = ''):
         fig = plt.figure(figsize=(6,4))
         ax = fig.add_subplot(1, 1, 1)
@@ -404,13 +524,37 @@ if __name__ == '__main__':
                     sz_with_g1_all.append(runOnSmartphoneTot)
                     if b > 0.0:
                         sz_with_g1_each.append(runOnSmartphoneTot / int(numSmartphoneNode * b))
+        cost_with_cloud = []
+        cost_without_cloud = []
+        energy_cost = []
+        energy_cost_with_broker = []
+        broker_cost = []
+        total_cost_with_broker = []
+        total_cost_without_broker = []
+        
+        x = np.linspace(0.0, 1.0, 301)
+        for b in x:
+            cost_with_cloud.append(compute_cloud_cost(int(numSmartphoneNode * (1 - b)), True))
+            cost_without_cloud.append(compute_cloud_cost(int(numSmartphoneNode * (1 - b)), False))
+            energy_cost_with_broker.append(compute_energy_cost(b, True))
+            energy_cost.append(compute_energy_cost(b, False))
+            broker_cost.append(compute_broker_cost())
+            total_cost_with_broker.append(compute_cloud_cost(int(numSmartphoneNode * (1 - b)), True) + compute_energy_cost(b, False))
+            total_cost_without_broker.append(compute_cloud_cost(int(numSmartphoneNode * (1 - b)), False) + compute_energy_cost(b, False))
         # 2D by beta all smartphone
         filename = f'{basedir}{separator}roundsByPl-allThermostats.pdf'
         make_log_double_line_chart(b_axis_with_g1, cz_with_g1, 'OnCloud', colors[2], b_axis_with_g1, sz_with_g1_all, 'OnAllThermostats', colors[1], xlabel='$P_{l}$', ylabel='rounds count', title='Rounds count (cost proxy)', filename=filename)
         # 2D by beta each smartphoneplt.tight_layout()
         filename = f'{basedir}{separator}roundsByPl-eachThermostat.pdf'
         make_log_double_line_chart(b_axis_with_g1, cz_with_g1, 'OnCloud', colors[2], b_axis_with_g1[1: ], sz_with_g1_each, 'OnEachThermostat', colors[1], xlabel='$P_{l}$', ylabel='rounds count', title='Rounds count (cost proxy)', filename=filename)
-
+        # cost
+#        filename = f'{basedir}{separator}deplyment-cost-four-line.pdf'
+#        make_four_line_chart(x, cost_with_cloud, 'cost with B=cloud', colors[2], cost_without_cloud, 'cost with B=edge', colors[1], energy_cost, 'energy cost with B=edge', colors[0], energy_cost_with_broker, 'energy cost with B=cloud', colors[3], xlabel='$P_{l}$', ylabel=r'Upkeep($\$/day$)', ylabel3=r'$\$/$', title='Upkeep cost estimation', filename=filename)   
+        filename = f'{basedir}{separator}upkeep-cost-breakdown.pdf'
+        make_three_line_chart(x, cost_without_cloud, 'cloud infrastructure', colors[2], broker_cost, 'broker cloud hosting', colors[1], energy_cost, 'end device electricity', colors[0], xlabel='$P_{l}$', ylabel=r'Upkeep ($\$/day$)', ylabel3=r'$\$/$', title='Upkeep cost breakdown', filename=filename)        
+        filename = f'{basedir}{separator}estimated-upkeep-cost.pdf'
+        make_two_line_chart(x, total_cost_with_broker, 'B=cloud', colors[3], total_cost_without_broker, 'B=edge', colors[1], xlabel='$P_{l}$', ylabel=r'Upkeep ($\$/day$)', ylabel3=r'$\$/$', title='Estimated upkeep cost', filename=filename)        
+        
     def generate_charts(means, errors = None, basedir=''):
         roundDir = f'{basedir}{separator}protelis-rounds-new'
         Path(roundDir).mkdir(parents=True, exist_ok=True)
