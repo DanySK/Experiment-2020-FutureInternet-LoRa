@@ -81,7 +81,6 @@ _make_charts: &make_charts
     - travis_retry pip install -r requirements.txt --user
   script:
     - travis_wait 50 python process.py
-    - travis_wait 10 python processRoundByPl.py
     - find charts -name "*.pdf" -exec pdfcrop --clip {} {} \;
 
 _deploy_base: &deploy_base

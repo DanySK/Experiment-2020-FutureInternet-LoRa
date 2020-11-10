@@ -581,14 +581,136 @@ if __name__ == '__main__':
         fig.savefig(f'{basedir}{separator}application-with-min-max.pdf')
         plt.close(fig)
 
+    def compute_protelis_broker_cost():
+        node_count = 310
+        neighboor = 49
+        daily_connection_minutes = 24 * 60
+        daily_round = 24 * 4
+        daily_connection_cost = daily_connection_minutes * 0.096 / 1_000_000
+        daily_message_cost = (daily_round + daily_round * neighboor) * 1.20 / 1_000_000
+        daily_broker_cost = (daily_connection_cost + daily_message_cost) * node_count
+        return daily_broker_cost
+
+    def compute_lora_gateway_broker_cost():
+        gateway_count = 9
+        mote_per_gateway = 10
+        daily_connection_minutes = 24 * 60
+        daily_lora_per_gateway = 24 * mote_per_gateway
+        daily_connection_cost = daily_connection_minutes * 0.096 / 1_000_000
+        daily_message_cost = daily_lora_per_gateway * 2 * 1.20 / 1_000_000
+        daily_broker_cost = (daily_connection_cost + daily_message_cost) * gateway_count
+        return daily_broker_cost
+    
+    def compute_lora_server_broker_cost():
+        gateway_count = 9
+        mote_per_gateway = 10
+        daily_connection_minutes = 24 * 60
+        daily_lora_per_gateway = 24 * mote_per_gateway
+        daily_connection_cost = daily_connection_minutes * 0.096 / 1_000_000
+        daily_message_cost = (daily_lora_per_gateway * gateway_count + daily_lora_per_gateway) * 1.20 / 1_000_000
+        daily_broker_cost = daily_connection_cost + daily_message_cost
+        return daily_broker_cost
+    
+    def compute_broker_cost():
+        return compute_protelis_broker_cost() + compute_lora_gateway_broker_cost() + compute_lora_server_broker_cost()
+    
+    def num_of_instance(node_count):
+        if node_count == 0:
+            return 0
+        if node_count <= 100:
+            return 1
+        if node_count <= 200:
+            return 2
+        return 3
+    
+    def compute_instance_cost(node_count):
+        return num_of_instance(node_count) * 0.0291 * 24
+    
+    def compute_cloud_cost(node_count, withBroker):
+        num_of_day = 1
+        if withBroker:
+            return (compute_broker_cost() + compute_instance_cost(node_count)) * num_of_day
+        return compute_instance_cost(node_count) * num_of_day
+    
+    def compute_energy_cost(proportion_device_on_thermostat, withBroker):
+        device_count = 300
+        daily_round_per_device = 4 * 24
+        daily_round = device_count * proportion_device_on_thermostat * daily_round_per_device
+        time = 24 * 60 * 60
+        time_per_round = 1
+        idle_consumption = 0.325
+        round_consumption = 2.7 - idle_consumption
+        daily_joule = device_count * idle_consumption * time + daily_round * round_consumption * time_per_round
+        price_per_joule = 9.3e-8
+        energy_cost = daily_joule * price_per_joule
+        if withBroker:
+            return compute_broker_cost() + energy_cost
+        return energy_cost 
+    
+    def make_three_line_chart(xdata, ydata1, ydata1Label, ydata1Color, ydata2, ydata2Label, ydata2Color, ydata3, ydata3Label, ydata3Color, xlabel = '', ylabel = '', ylabel3 = '', title = '', filename = ''):
+        fig = plt.figure(figsize=(7,4))
+        ax = fig.add_subplot(1, 1, 1)
+        ax.set_title(title)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_xlim([0, 1])
+        ax.set_ylim([0,max(max(ydata1), max(ydata2), max(ydata3)) + 0.5])
+        ax.plot(xdata, ydata1, label=ydata1Label, color=ydata1Color, linewidth=2.0)
+        ax.plot(xdata, ydata2, label=ydata2Label, color=ydata2Color, linewidth=2.0)
+        ax.plot(xdata, ydata3, label=ydata3Label, color=ydata3Color, linewidth=2.0)
+        
+        ax.legend()
+        plt.tight_layout()
+        fig.savefig(filename)
+        plt.close(fig)
+    
+    def make_two_line_chart(xdata, ydata1, ydata1Label, ydata1Color, ydata2, ydata2Label, ydata2Color, xlabel = '', ylabel = '', ylabel3 = '', title = '', filename = ''):
+        fig = plt.figure(figsize=(7,4))
+        ax = fig.add_subplot(1, 1, 1)
+        ax.set_title(title)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_xlim([0, 1])
+        ax.plot(xdata, ydata1, label=ydata1Label, color=ydata1Color, linewidth=2.0)
+        ax.plot(xdata, ydata2, label=ydata2Label, color=ydata2Color, linewidth=2.0)
+        
+        ax.legend()
+        plt.tight_layout()
+        fig.savefig(filename)
+        plt.close(fig)
+        
+    def generate_cost_charts(datas, basedir=''):
+        numSmartphoneNode = 300
+        cost_without_cloud = []
+        energy_cost = []
+        broker_cost = []
+        total_cost_with_broker = []
+        total_cost_without_broker = []
+        
+        x = np.linspace(0.0, 1.0, 301)
+        for b in x:
+            cost_without_cloud.append(compute_cloud_cost(int(numSmartphoneNode * (1 - b)), False))
+            energy_cost.append(compute_energy_cost(b, False))
+            broker_cost.append(compute_broker_cost())
+            total_cost_with_broker.append(compute_cloud_cost(int(numSmartphoneNode * (1 - b)), True) + compute_energy_cost(b, False))
+            total_cost_without_broker.append(compute_cloud_cost(int(numSmartphoneNode * (1 - b)), False) + compute_energy_cost(b, False))
+        
+        filename = f'{basedir}{separator}deplyment-cost-three-line.pdf'
+        make_three_line_chart(x, cost_without_cloud, 'cloud infrastructure', colors[2], broker_cost, 'broker cloud hosting', colors[1], energy_cost, 'end device electricity', colors[0], xlabel='$P_{l}$', ylabel=r'Operating cost ($\$/day$)', ylabel3=r'$\$/$', title='Operating cost breakdown', filename=filename)        
+        filename = f'{basedir}{separator}deplyment-cost-two-line.pdf'
+        make_two_line_chart(x, total_cost_with_broker, 'B=cloud', colors[2], total_cost_without_broker, 'B=edge', colors[1], xlabel='$P_{l}$', ylabel=r'Operating cost ($\$/day$)', ylabel3=r'$\$/$', title='Estimated operating cost', filename=filename)        
+        
     def generate_charts(means, errors = None, basedir=''):
         applicationDir = f'{basedir}{separator}application'
         delayDir = f'{basedir}{separator}delays'
+        costDir = f'{basedir}{separator}operating-cost'
+        Path(costDir).mkdir(parents=True, exist_ok=True)
         Path(applicationDir).mkdir(parents=True, exist_ok=True)
         Path(delayDir).mkdir(parents=True, exist_ok=True)
         data = means.sel(dLocalhost=0.02)
         generate_application_chart(data, basedir=applicationDir)
         generate_delay_charts(data, basedir=delayDir)
+        generate_cost_charts(data.sel(dee=1.0).sel(dcc=25).sel(dec=50).sel(dsCnd=150), basedir=costDir)
 
     for experiment in experiments:
         current_experiment_means = means[experiment]
