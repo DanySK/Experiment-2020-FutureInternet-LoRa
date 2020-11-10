@@ -125,13 +125,6 @@ tasks.register<DefaultTask>("batch") {
     )
 }
 
-tasks.register<DefaultTask>("batchRound") {
-    dependsOn(
-        executeSimulations("runBatch", "$physicalNetworkDir/networkConfigsRound.toml",
-            "${projectDir.absolutePath}${separator}dataRound")
-    )
-}
-
 tasks.register<DefaultTask>("smallBatch") {
     val outputDir = "${projectDir.absolutePath}${separator}smallBatchData"
     dependsOn(executeSimulations("runSmallBatch", "$physicalNetworkDir/fewNetworkConfigs.toml",outputDir))
