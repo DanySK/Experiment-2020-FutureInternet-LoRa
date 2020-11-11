@@ -1,8 +1,8 @@
 [configurationNetwork]
 seed = 1
-# probability of LoRa device on edge
+# fraction of LoRa device on edge
 gamma = 1.0
-# probability of device on smartphone
+# fraction of device on smartphone
 beta = 1.0
 dee = 1
 dcc = 25
