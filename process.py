@@ -518,18 +518,21 @@ if __name__ == '__main__':
                 selectedData = datas.sel(gamma=gammaSelected).sel(dcc=dccSecondValue).sel(dec=decSecondValue).sel(dee=deeSecondValue)
                 make_delay_chart3D(selectedData, 'dsCnd', '$d_{a}$ (ms)', title, filename3D, i, inverted)
             
-
-    def generate_application_chart(means, errors = None, basedir=''):
-        Path(basedir).mkdir(parents=True, exist_ok=True)
-        datas = means.sel(dee=1.0).sel(dcc=25).sel(dec=50).sel(dsCnd=150).sel(gamma=0.33).sel(beta=0.33)
+    def generate_application_chart_by_broker_by_beta(data, broker, beta_value, basedir=''):
+        datas = data.sel(beta=beta_value)
+        hostIndex = 0 if broker == 'C' else 1
         time = datas[timeColumnName].values / 3600 # from seconds to hours
-        varianceTemp = np.sqrt(datas['varianceTemp'].values[0, :])
-        avgTemp = datas['avgTemp'].values[0, :]
-        minTemp = datas['minTemp'].values[0, :]
-        maxTemp = datas['maxTemp'].values[0, :]
+        varianceTemp = np.sqrt(datas['varianceTemp'].values[hostIndex, :])
+        avgTemp = datas['avgTemp'].values[hostIndex, :]
+        minTemp = datas['minTemp'].values[hostIndex, :]
+        maxTemp = datas['maxTemp'].values[hostIndex, :]
         # generate complete chart
-        fig = plt.figure(figsize = (6, 3))
+        host_broker = 'cloud' if broker == 'C' else 'edge'
+        computationOn = 'cloud' if beta_value == 0 else 'local device'
+        title = f'MQTT broker on {host_broker}, all thermostats\' computations on {computationOn}'
+        fig = plt.figure(figsize = (7, 4))
         ax = fig.add_subplot(1, 1, 1)
+        ax.set_title(title)
         ax.set_xlabel('time (h)')
         ax.set_ylabel('temperature (°C)')
         line_width = 2.0
@@ -544,11 +547,12 @@ if __name__ == '__main__':
         ax.axvline(61, color='#878787', linestyle='dashed', linewidth=line_width)
         ax.legend(frameon = False)
         fig.tight_layout()
-        fig.savefig(f'{basedir}{separator}application.pdf')
+        fig.savefig(f'{basedir}{separator}application-Broker-{broker}-Pl-{beta_value}.pdf')
         plt.close(fig)
         # generate chart with stdev
-        fig = plt.figure(figsize = (6, 3))
+        fig = plt.figure(figsize = (7, 4))
         ax = fig.add_subplot(1, 1, 1)
+        ax.set_title(title)
         ax.set_xlabel('time (h)')
         ax.set_ylabel('temperature (°C)')
         line_width = 2.0
@@ -561,11 +565,12 @@ if __name__ == '__main__':
         ax.axvline(61, color='#878787', linestyle='dashed', linewidth=line_width)
         ax.legend(frameon = False)
         fig.tight_layout()
-        fig.savefig(f'{basedir}{separator}application-with-stdev.pdf')
+        fig.savefig(f'{basedir}{separator}application-with-stdev-Broker-{broker}-Pl-{beta_value}.pdf')
         plt.close(fig)
         # generate chart with min-max
-        fig = plt.figure(figsize = (6, 3))
+        fig = plt.figure(figsize = (7, 4))
         ax = fig.add_subplot(1, 1, 1)
+        ax.set_title(title)
         ax.set_xlabel('time (h)')
         ax.set_ylabel('temperature (°C)')
         line_width = 2.0
@@ -578,8 +583,16 @@ if __name__ == '__main__':
         ax.axvline(61, color='#878787', linestyle='dashed', linewidth=line_width)
         ax.legend(frameon = False)
         fig.tight_layout()
-        fig.savefig(f'{basedir}{separator}application-with-min-max.pdf')
+        fig.savefig(f'{basedir}{separator}application-with-min-max-Broker-{broker}-Pl-{beta_value}.pdf')
         plt.close(fig)
+        
+    def generate_application_chart(means, errors = None, basedir=''):
+        Path(basedir).mkdir(parents=True, exist_ok=True)
+        datas = means.sel(dee=1.0).sel(dcc=25).sel(dec=50).sel(dsCnd=150).sel(gamma=0.33)
+        generate_application_chart_by_broker_by_beta(datas, 'C', 0, basedir)
+        generate_application_chart_by_broker_by_beta(datas, 'C', 1, basedir)
+        generate_application_chart_by_broker_by_beta(datas, 'E', 0, basedir)
+        generate_application_chart_by_broker_by_beta(datas, 'E', 1, basedir)
 
     def compute_protelis_broker_cost():
         node_count = 310
@@ -709,8 +722,8 @@ if __name__ == '__main__':
         Path(delayDir).mkdir(parents=True, exist_ok=True)
         data = means.sel(dLocalhost=0.02)
         generate_application_chart(data, basedir=applicationDir)
-        generate_delay_charts(data, basedir=delayDir)
-        generate_cost_charts(data.sel(dee=1.0).sel(dcc=25).sel(dec=50).sel(dsCnd=150), basedir=costDir)
+        #generate_delay_charts(data, basedir=delayDir)
+        #generate_cost_charts(data.sel(dee=1.0).sel(dcc=25).sel(dec=50).sel(dsCnd=150), basedir=costDir)
 
     for experiment in experiments:
         current_experiment_means = means[experiment]
