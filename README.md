@@ -24,7 +24,7 @@ Everything should run on any recent Linux, MacOS X, and Windows setup.
 ### Reference machine
 
 We provide a reference Travis CI configuration to maintain reproducibility over time.
-While this image: [![Build Status](https://travis-ci.com/Placu95/Experiment-2020-FutureInternet-LoRa.svg?branch=master)](https://travis-ci.com/Placu95/Experiment-2020-FutureInternet-LoRa)
+While this image: [![Build Status](https://travis-ci.com/aPlacuzzi/Experiment-2020-FutureInternet-LoRa.svg?branch=master)](https://travis-ci.com/aPlacuzzi/Experiment-2020-FutureInternet-LoRa)
 is green, the experiment is being maintained and,
 by copying the configuration steps we perform for Travis CI in the `.travis.yml` file,
 you should be able to re-run the experiment entirely.
@@ -32,7 +32,7 @@ you should be able to re-run the experiment entirely.
 ### Automatic releases
 
 Charts are remotely generated and made available on the project release page.
-[The latest release](https://github.com/Placu95/Experiment-2020-FutureInternet-LoRa/releases/latest)
+[The latest release](https://github.com/aPlacuzzi/Experiment-2020-FutureInternet-LoRa/releases/latest)
 allows for quick retrieval of the latest version of the charts.
 
 ## Running the simulations
